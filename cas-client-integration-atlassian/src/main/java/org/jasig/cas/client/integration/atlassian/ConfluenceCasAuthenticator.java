@@ -29,12 +29,12 @@ import org.jasig.cas.client.util.AbstractCasFilter;
 import org.jasig.cas.client.validation.Assertion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.sql.Date;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.security.Principal;
+import java.sql.Date;
 
 /**
  * Extension of ConfluenceAuthenticator to allow people to configure Confluence to authenticate
@@ -109,6 +109,7 @@ public final class ConfluenceCasAuthenticator extends ConfluenceAuthenticator {
             }
         }
     }
+
     public boolean logout(final HttpServletRequest request, final HttpServletResponse response)
             throws AuthenticatorException {
         final HttpSession session = request.getSession();

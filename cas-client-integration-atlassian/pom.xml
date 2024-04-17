@@ -1426,18 +1426,9 @@
             <url>https://maven.atlassian.com/3rdparty/</url>
         </repository>
         <repository>
-            <id>mvnrepo-public</id>
-            <name>mvnrepo-public</name>
-            <url>https://mvnrepository.com/artifact/</url>
+            <id>packages-atlassian</id>
+            <name>packages atlassian</name>
+            <url>https://packages.atlassian.com/maven-external/</url>
         </repository>
-        <repository>
-            <id>atlassian-external</id>
-            <name>atlassian-external</name>
-            <url>https://packages.atlassian.com/mvn/maven-atlassian-external</url>
-        </repository>
-        <!--
-        https://packages.atlassian.com/content/repositories/atlassian-public/
-        https://mvnrepository.com/artifact/
-        -->
     </repositories>
 </project>
