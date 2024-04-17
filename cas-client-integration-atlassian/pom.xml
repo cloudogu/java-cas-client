@@ -22,7 +22,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>org.jasig.cas.client</groupId>
-        <version>3.6.3</version>
+        <version>3.6.4</version>
         <artifactId>cas-client</artifactId>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -138,7 +138,7 @@
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
             <artifactId>confluence</artifactId>
-            <version>4.0</version>
+            <version>8.5.8</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -293,10 +293,10 @@
                     <groupId>com.atlassian.bandana</groupId>
                     <artifactId>atlassian-bandana</artifactId>
                 </exclusion>
-                <exclusion>
+                <!-- <exclusion>
                     <groupId>com.atlassian.user</groupId>
                     <artifactId>atlassian-user</artifactId>
-                </exclusion>
+                </exclusion> -->
                 <exclusion>
                     <groupId>com.atlassian.renderer</groupId>
                     <artifactId>atlassian-renderer</artifactId>
@@ -313,10 +313,10 @@
                     <groupId>joda-time</groupId>
                     <artifactId>joda-time</artifactId>
                 </exclusion>
-                <exclusion>
+                <!-- <exclusion>
                     <groupId>com.atlassian.seraph</groupId>
                     <artifactId>atlassian-seraph</artifactId>
-                </exclusion>
+                </exclusion> -->
                 <exclusion>
                     <groupId>com.atlassian.security.auth.trustedapps</groupId>
                     <artifactId>atlassian-trusted-apps-core</artifactId>
@@ -441,7 +441,7 @@
                     <groupId>javax.mail</groupId>
                     <artifactId>mail</artifactId>
                 </exclusion>
-                <exclusion>
+                <!-- <exclusion>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-core</artifactId>
                 </exclusion>
@@ -456,15 +456,15 @@
                 <exclusion>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-aop</artifactId>
-                </exclusion>
+                </exclusion> -->
                 <exclusion>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-hibernate2</artifactId>
                 </exclusion>
-                <exclusion>
+                <!-- <exclusion>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-beans</artifactId>
-                </exclusion>
+                </exclusion> -->
                 <exclusion>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-jdbc</artifactId>
@@ -1416,11 +1416,6 @@
     </dependencies>
     <repositories>
         <repository>
-            <id>packages-atlassian</id>
-            <name>packages atlassian</name>
-            <url>https://packages.atlassian.com/maven-external/</url>
-        </repository>
-        <repository>
             <id>atlassian</id>
             <name>Atlassian Repository</name>
             <url>https://maven.atlassian.com/content/repositories/atlassian-public/</url>
@@ -1430,5 +1425,19 @@
             <name>Atlassian 3rd Party Repository</name>
             <url>https://maven.atlassian.com/3rdparty/</url>
         </repository>
+        <repository>
+            <id>mvnrepo-public</id>
+            <name>mvnrepo-public</name>
+            <url>https://mvnrepository.com/artifact/</url>
+        </repository>
+        <repository>
+            <id>atlassian-external</id>
+            <name>atlassian-external</name>
+            <url>https://packages.atlassian.com/mvn/maven-atlassian-external</url>
+        </repository>
+        <!--
+        https://packages.atlassian.com/content/repositories/atlassian-public/
+        https://mvnrepository.com/artifact/
+        -->
     </repositories>
 </project>
