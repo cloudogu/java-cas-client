@@ -1,3 +1,9 @@
+# Info
+
+> For Confluence version 8.x and newer extract org.jasig.cas.client.integration.webapp.Confluence80CasWebApplicationInitializer.class file from jar and add it to the Confluence WEB-INF/classes in the same package path. Add the CAS filters configuration to web.xml. See web.xml configuration of the client. Filter mapping should be defined by the Confluence80CasWebApplicationInitializer class for /* path.
+
+[Source](https://github.com/gulpo/atlassian-java-cas-client)
+
 # Java Apereo CAS Client [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.jasig.cas.client/cas-client-core/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.jasig.cas.client/cas-client)
 
 <a name="intro"></a>
