@@ -53,6 +53,10 @@ public class CasClientConfigurationProperties {
     @NonNull
     private String clientHostUrl;
 
+    private String hostnameVerifier;
+
+    private String sslConfigFile;
+
     /**
      * List of URL patterns protected by CAS authentication filter.
      */
@@ -81,12 +85,12 @@ public class CasClientConfigurationProperties {
     /**
      * Validation filter useSession parameter.
      */
-    private Boolean useSession;
+    private Boolean useSession = Boolean.TRUE;
 
     /**
      * Validation filter redirectAfterValidation.
      */
-    private Boolean redirectAfterValidation;
+    private Boolean redirectAfterValidation = Boolean.TRUE;
 
     /**
      * Cas20ProxyReceivingTicketValidationFilter acceptAnyProxy parameter.
@@ -107,6 +111,12 @@ public class CasClientConfigurationProperties {
      * Cas20ProxyReceivingTicketValidationFilter proxyReceptorUrl parameter.
      */
     private String proxyReceptorUrl;
+
+    /**
+     * Name of attributes to fetch from assertion
+     * to use when populating spring security context.
+     */
+    private List<String> attributeAuthorities = new ArrayList<>();
 
     /**
      * ValidationType the CAS protocol validation type. Defaults to CAS3 if not explicitly set.
@@ -131,7 +141,6 @@ public class CasClientConfigurationProperties {
             this.enabled = enabled;
         }
     }
-
 
     public String getServerUrlPrefix() {
         return serverUrlPrefix;
@@ -265,8 +274,31 @@ public class CasClientConfigurationProperties {
         return singleLogout;
     }
 
-    public void setSingleLogout(SingleLogout singleLogout) {
+    public void setSingleLogout(final SingleLogout singleLogout) {
         this.singleLogout = singleLogout;
     }
 
+    public List<String> getAttributeAuthorities() {
+        return attributeAuthorities;
+    }
+
+    public void setAttributeAuthorities(final List<String> attributeAuthorities) {
+        this.attributeAuthorities = attributeAuthorities;
+    }
+
+    public String getHostnameVerifier() {
+        return hostnameVerifier;
+    }
+
+    public void setHostnameVerifier(final String hostnameVerifier) {
+        this.hostnameVerifier = hostnameVerifier;
+    }
+
+    public String getSslConfigFile() {
+        return sslConfigFile;
+    }
+
+    public void setSslConfigFile(final String sslConfigFile) {
+        this.sslConfigFile = sslConfigFile;
+    }
 }

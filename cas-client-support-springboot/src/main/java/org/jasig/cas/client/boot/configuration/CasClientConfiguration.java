@@ -20,6 +20,7 @@ package org.jasig.cas.client.boot.configuration;
 
 import org.jasig.cas.client.authentication.AuthenticationFilter;
 import org.jasig.cas.client.authentication.Saml11AuthenticationFilter;
+import org.jasig.cas.client.configuration.ConfigurationKeys;
 import org.jasig.cas.client.session.SingleSignOutFilter;
 import org.jasig.cas.client.session.SingleSignOutHttpSessionListener;
 import org.jasig.cas.client.util.AssertionThreadLocalFilter;
@@ -28,6 +29,8 @@ import org.jasig.cas.client.validation.Cas20ProxyReceivingTicketValidationFilter
 import org.jasig.cas.client.validation.Cas30ProxyReceivingTicketValidationFilter;
 import org.jasig.cas.client.validation.Saml11TicketValidationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -35,16 +38,21 @@ import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.security.cas.authentication.CasAssertionAuthenticationToken;
+import org.springframework.security.cas.authentication.CasAuthenticationToken;
+import org.springframework.security.cas.userdetails.GrantedAuthorityFromAssertionAttributesUserDetailsService;
+import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-
 import javax.servlet.Filter;
-
+import java.io.File;
+import java.io.FileWriter;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.EventListener;
+import java.util.Properties;
 
 /**
  * Configuration class providing default CAS client infrastructure filters.
@@ -105,29 +113,37 @@ public class CasClientConfiguration {
         initFilter(validationFilter,
             targetCasValidationFilter,
             1,
-            constructInitParams("casServerUrlPrefix", this.configProps.getServerUrlPrefix(), this.configProps.getClientHostUrl()),
+            constructInitParams(ConfigurationKeys.CAS_SERVER_URL_PREFIX.getName(), this.configProps.getServerUrlPrefix(), this.configProps.getClientHostUrl()),
             this.configProps.getValidationUrlPatterns());
 
         if (this.configProps.getUseSession() != null) {
-            validationFilter.getInitParameters().put("useSession", String.valueOf(this.configProps.getUseSession()));
+            validationFilter.getInitParameters().put(ConfigurationKeys.USE_SESSION.getName(), String.valueOf(this.configProps.getUseSession()));
         }
         if (this.configProps.getRedirectAfterValidation() != null) {
-            validationFilter.getInitParameters().put("redirectAfterValidation", String.valueOf(this.configProps.getRedirectAfterValidation()));
+            validationFilter.getInitParameters().put(ConfigurationKeys.REDIRECT_AFTER_VALIDATION.getName(),
+                String.valueOf(this.configProps.getRedirectAfterValidation()));
+        }
+
+        if (this.configProps.getHostnameVerifier() != null) {
+            validationFilter.getInitParameters().put(ConfigurationKeys.HOSTNAME_VERIFIER.getName(), this.configProps.getHostnameVerifier());
+        }
+        if (this.configProps.getSslConfigFile() != null) {
+            validationFilter.getInitParameters().put(ConfigurationKeys.SSL_CONFIG_FILE.getName(), this.configProps.getSslConfigFile());
         }
 
         //Proxy tickets validation
         if (this.configProps.getAcceptAnyProxy() != null) {
-            validationFilter.getInitParameters().put("acceptAnyProxy", String.valueOf(this.configProps.getAcceptAnyProxy()));
+            validationFilter.getInitParameters().put(ConfigurationKeys.ACCEPT_ANY_PROXY.getName(), String.valueOf(this.configProps.getAcceptAnyProxy()));
         }
         if (!this.configProps.getAllowedProxyChains().isEmpty()) {
-            validationFilter.getInitParameters().put("allowedProxyChains",
+            validationFilter.getInitParameters().put(ConfigurationKeys.ALLOWED_PROXY_CHAINS.getName(),
                 StringUtils.collectionToDelimitedString(this.configProps.getAllowedProxyChains(), " "));
         }
         if (this.configProps.getProxyCallbackUrl() != null) {
-            validationFilter.getInitParameters().put("proxyCallbackUrl", this.configProps.getProxyCallbackUrl());
+            validationFilter.getInitParameters().put(ConfigurationKeys.PROXY_CALLBACK_URL.getName(), this.configProps.getProxyCallbackUrl());
         }
         if (this.configProps.getProxyReceptorUrl() != null) {
-            validationFilter.getInitParameters().put("proxyReceptorUrl", this.configProps.getProxyReceptorUrl());
+            validationFilter.getInitParameters().put(ConfigurationKeys.PROXY_RECEPTOR_URL.getName(), this.configProps.getProxyReceptorUrl());
         }
 
         if (this.casClientConfigurer != null) {
@@ -148,11 +164,11 @@ public class CasClientConfiguration {
         initFilter(authnFilter,
             targetCasAuthnFilter,
             2,
-            constructInitParams("casServerLoginUrl", this.configProps.getServerLoginUrl(), this.configProps.getClientHostUrl()),
+            constructInitParams(ConfigurationKeys.CAS_SERVER_LOGIN_URL.getName(), this.configProps.getServerLoginUrl(), this.configProps.getClientHostUrl()),
             this.configProps.getAuthenticationUrlPatterns());
 
         if (this.configProps.getGateway() != null) {
-            authnFilter.getInitParameters().put("gateway", String.valueOf(this.configProps.getGateway()));
+            authnFilter.getInitParameters().put(ConfigurationKeys.GATEWAY.getName(), String.valueOf(this.configProps.getGateway()));
         }
 
         if (this.casClientConfigurer != null) {
@@ -210,8 +226,8 @@ public class CasClientConfiguration {
     public FilterRegistrationBean casSingleSignOutFilter() {
         final FilterRegistrationBean singleSignOutFilter = new FilterRegistrationBean();
         singleSignOutFilter.setFilter(new SingleSignOutFilter());
-        Map<String,String> initParameters = new HashMap<>(1);
-        initParameters.put("casServerUrlPrefix", configProps.getServerUrlPrefix());
+        final Map<String, String> initParameters = new HashMap<>(1);
+        initParameters.put(ConfigurationKeys.CAS_SERVER_URL_PREFIX.getName(), configProps.getServerUrlPrefix());
         singleSignOutFilter.setInitParameters(initParameters);
         singleSignOutFilter.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return singleSignOutFilter;
@@ -219,10 +235,37 @@ public class CasClientConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "cas", value = "single-logout.enabled", havingValue = "true")
-    public ServletListenerRegistrationBean<EventListener> casSingleSignOutListener(){
+    public ServletListenerRegistrationBean<EventListener> casSingleSignOutListener() {
         ServletListenerRegistrationBean<EventListener> singleSignOutListener = new ServletListenerRegistrationBean<>();
         singleSignOutListener.setListener(new SingleSignOutHttpSessionListener());
         singleSignOutListener.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return singleSignOutListener;
+    }
+
+    @Configuration
+    @EnableConfigurationProperties(CasClientConfigurationProperties.class)
+    @ConditionalOnClass(CasAuthenticationToken.class)
+    @ConditionalOnProperty(prefix = "cas", value = "use-session", havingValue = "true", matchIfMissing = true)
+    public class SpringSecurityAssertionAutoConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean(name = "springSecurityAssertionSessionContextFilter")
+        public FilterRegistrationBean springSecurityAssertionSessionContextFilter() {
+            final FilterRegistrationBean filter = new FilterRegistrationBean();
+            filter.setFilter(new SpringSecurityAssertionSessionContextFilter(springSecurityCasUserDetailsService()));
+            filter.setEnabled(!configProps.getAttributeAuthorities().isEmpty());
+            filter.setOrder(0);
+            if (casClientConfigurer != null) {
+                casClientConfigurer.configureHttpServletRequestWrapperFilter(filter);
+            }
+            return filter;
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(name = "springSecurityCasUserDetailsService")
+        public AuthenticationUserDetailsService<CasAssertionAuthenticationToken> springSecurityCasUserDetailsService() {
+            return new GrantedAuthorityFromAssertionAttributesUserDetailsService(
+                configProps.getAttributeAuthorities().toArray(new String[]{}));
+        }
     }
 }

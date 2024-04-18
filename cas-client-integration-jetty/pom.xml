@@ -23,7 +23,7 @@
     <parent>
         <artifactId>cas-client</artifactId>
         <groupId>org.jasig.cas.client</groupId>
-        <version>3.6.2-SNAPSHOT</version>
+        <version>3.6.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,7 +33,7 @@
 
     <properties>
         <!-- Note Jetty 9.2.x is the last version to support Java SE 7 -->
-        <jetty.version>9.4.30.v20200611</jetty.version>
+        <jetty.version>9.4.44.v20210927</jetty.version>
     </properties>
 
     <dependencies>

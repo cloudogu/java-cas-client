@@ -1,3 +1,9 @@
+# Info
+
+> For Confluence version 8.x and newer extract org.jasig.cas.client.integration.webapp.Confluence80CasWebApplicationInitializer.class file from jar and add it to the Confluence WEB-INF/classes in the same package path. Add the CAS filters configuration to web.xml. See web.xml configuration of the client. Filter mapping should be defined by the Confluence80CasWebApplicationInitializer class for /* path.
+
+[Source](https://github.com/gulpo/atlassian-java-cas-client)
+
 # Java Apereo CAS Client [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.jasig.cas.client/cas-client-core/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.jasig.cas.client/cas-client)
 
 <a name="intro"></a>
@@ -730,12 +736,52 @@ cas.validation-type=SAML
 * `cas.assertion-thread-local-url-patterns`
 * `cas.gateway`
 * `cas.use-session`
+* `cas.attribute-authorities`
 * `cas.redirect-after-validation`
 * `cas.allowed-proxy-chains`
 * `cas.proxy-callback-url`
 * `cas.proxy-receptor-url`
 * `cas.accept-any-proxy`
 * `server.context-parameters.renew`
+
+### Spring Security Integration
+
+An application that is handling security concerns via Spring Security can take advantage
+of this module to automatically populate the Spring Security authentication context
+with roles and authorities that are fetched as attributes from the CAS assertion. 
+
+To do so, the attributes names (i.e. `membership`) from the CAS assertion that should be translated to Spring Security 
+authorities must be specified in the configuration:
+
+```properties
+cas.attribute-authorities=membership
+```
+
+The application may then enforce role-based security via:
+
+```java         
+@SpringBootApplication
+@EnableCasClient
+public class MyConfiguration extends WebSecurityConfigurerAdapter {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests()
+            .antMatchers("/").permitAll()
+            .antMatchers("/protected-endpoint").hasAuthority("ADMIN")
+            .anyRequest().authenticated();
+    }
+}
+```
+
+The translation between CAS attributes and Spring Security authorities and/or roles can be customized using 
+the following bean definition:
+
+```java
+@Bean
+public AuthenticationUserDetailsService<CasAssertionAuthenticationToken> springSecurityCasUserDetailsService() {
+    return null;
+}
+```    
 
 ### Advanced configuration
 

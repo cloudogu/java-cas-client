@@ -18,13 +18,18 @@
  */
 package org.jasig.cas.client.integration.atlassian;
 
-import com.atlassian.confluence.event.events.security.LoginDetails;
 import com.atlassian.confluence.event.events.security.LoginEvent;
 import com.atlassian.confluence.event.events.security.LoginFailedEvent;
 import com.atlassian.confluence.user.ConfluenceAuthenticator;
+import com.atlassian.crowd.embedded.api.Directory;
+import com.atlassian.crowd.exception.DirectoryNotFoundException;
+import com.atlassian.crowd.exception.OperationFailedException;
+import com.atlassian.crowd.manager.directory.DirectoryManager;
+import com.atlassian.sal.api.component.ComponentLocator;
 import com.atlassian.seraph.auth.AuthenticatorException;
 import com.atlassian.seraph.auth.LoginReason;
 import java.security.Principal;
+import java.sql.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -34,28 +39,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Extension of ConfluenceAuthenticator to allow people to configure Confluence 3.5+ to authenticate
+ * Extension of ConfluenceAuthenticator to allow people to configure Confluence 8.0+ to authenticate
  * via CAS.
  *
- * Based on https://bitbucket.org/jaysee00/example-confluence-sso-authenticator
+ * Based on {@link Confluence35CasAuthenticator}
  *
- * @author Scott Battaglia
- * @author John Watson
- * @author Jozef Kotlar
+ * @author Thomas Jekiel
  * @version $Revision$ $Date$
- * @since 3.3.0
+ * @since 3.6.4
  */
-public final class Confluence35CasAuthenticator extends ConfluenceAuthenticator {
-    private static final long serialVersionUID = -6097438206488390678L;
+public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator {
+    private static final long serialVersionUID = -6097438206488390679L;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Confluence35CasAuthenticator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Confluence80CasAuthenticator.class);
 
+    @Override
     public Principal getUser(final HttpServletRequest request, final HttpServletResponse response) {
         Principal existingUser = getUserFromSession(request);
         if (existingUser != null) {
-            LOGGER.debug("Session found; user already logged in.");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Session found; user already logged in.");
+            }
             LoginReason.OK.stampRequestResponse(request, response);
             return existingUser;
+        } else {
+            try {
+                // The user wasn't found in confluence but is authenticated with cas.
+                // Maybe the user was created after the last directory synchronization.
+                synchronizeUsers();
+            } catch (OperationFailedException | DirectoryNotFoundException e) {
+                e.printStackTrace();
+            }
         }
 
         final HttpSession session = request.getSession();
@@ -72,21 +86,28 @@ public final class Confluence35CasAuthenticator extends ConfluenceAuthenticator 
                 getElevatedSecurityGuard().onSuccessfulLoginAttempt(request, username);
                 // Firing this event is necessary to ensure the user's personal information is initialised correctly.
                 getEventPublisher().publish(
-                        new LoginEvent(this, username, request.getSession().getId(), remoteHost, remoteIP, "CAS SSO"));
+                        new LoginEvent(this, username, request.getSession().getId(), remoteHost, remoteIP, "CAS"));
                 LoginReason.OK.stampRequestResponse(request, response);
-                LOGGER.debug("Logging in [{}] from CAS.", username);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Logging in [{}] from CAS.", username);
+                }
             } else {
-                LOGGER.debug("Failed logging [{}] from CAS.", username);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Failed logging [{}] from CAS.", username);
+                }
                 getElevatedSecurityGuard().onFailedLoginAttempt(request, username);
                 getEventPublisher().publish(
                         new LoginFailedEvent(this, username, request.getSession().getId(), remoteHost, remoteIP));
             }
             return user;
         }
-
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Logging by standard Confluence method.");
+        }
         return super.getUser(request, response);
     }
 
+    @Override
     public boolean logout(final HttpServletRequest request, final HttpServletResponse response)
             throws AuthenticatorException {
         final HttpSession session = request.getSession();
@@ -100,5 +121,21 @@ public final class Confluence35CasAuthenticator extends ConfluenceAuthenticator 
         removePrincipalFromSessionContext(request);
         session.setAttribute(AbstractCasFilter.CONST_CAS_ASSERTION, null);
         return true;
+    }
+
+    static synchronized void synchronizeUsers() throws OperationFailedException, DirectoryNotFoundException {
+        DirectoryManager directoryManager = ComponentLocator.getComponent(DirectoryManager.class);
+        for (Directory directory : directoryManager.findAllDirectories()) {
+            if (directoryManager.isSynchronisable(directory.getId())
+                    && !directoryManager.isSynchronising(directory.getId())) {
+                Date threshold = new Date(System.currentTimeMillis() - 30 * 1000);
+                if (directory.getUpdatedDate().before(threshold)) {
+                    LOGGER.debug("Synchronizing directory {}", directory.getName());
+                    directoryManager.synchroniseCache(directory.getId(), directoryManager.getSynchronisationMode(directory.getId()), false);
+                } else {
+                    LOGGER.debug("Directory {} was synchronized in the last 30 seconds", directory.getName());
+                }
+            }
+        }
     }
 }
