@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator {
     private static final long serialVersionUID = -6097438206488390679L;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Confluence35CasAuthenticator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Confluence80CasAuthenticator.class);
 
     @Override
     public Principal getUser(final HttpServletRequest request, final HttpServletResponse response) {
