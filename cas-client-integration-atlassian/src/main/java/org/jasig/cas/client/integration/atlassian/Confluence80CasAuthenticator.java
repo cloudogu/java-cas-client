@@ -141,12 +141,12 @@ public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator 
         for (Directory directory : directoryManager.findAllDirectories()) {
             if (directoryManager.isSynchronisable(directory.getId())
                     && !directoryManager.isSynchronising(directory.getId())) {
-                Date threshold = new Date(System.currentTimeMillis() - 300 * 1000);
+                Date threshold = new Date(System.currentTimeMillis() - 30 * 1000);
                 if (directory.getUpdatedDate().before(threshold)) {
                     LOGGER.debug("Synchronizing directory {}", directory.getName());
                     directoryManager.synchroniseCache(directory.getId(), directoryManager.getSynchronisationMode(directory.getId()), false);
                 } else {
-                    LOGGER.debug("Directory {} was synchronized in the last 300 seconds", directory.getName());
+                    LOGGER.debug("Directory {} was synchronized in the last 30 seconds", directory.getName());
                 }
             }
         }
