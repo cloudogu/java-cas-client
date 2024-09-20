@@ -85,10 +85,6 @@ public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator 
         }
 
         if (assertion != null) {
-            Map<String, Object> attributes = assertion.getPrincipal().getAttributes();
-            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-                System.out.println(entry.getKey() + "/" + entry.getValue());
-            }
             final String username = assertion.getPrincipal().getName();
             final Principal user = getUser(username);
             final String remoteIP = request.getRemoteAddr();
