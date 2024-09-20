@@ -21,15 +21,9 @@ package org.jasig.cas.client.integration.atlassian;
 import com.atlassian.confluence.event.events.security.LoginEvent;
 import com.atlassian.confluence.event.events.security.LoginFailedEvent;
 import com.atlassian.confluence.user.ConfluenceAuthenticator;
-import com.atlassian.crowd.embedded.api.Directory;
-import com.atlassian.crowd.exception.DirectoryNotFoundException;
-import com.atlassian.crowd.exception.OperationFailedException;
-import com.atlassian.crowd.manager.directory.DirectoryManager;
-import com.atlassian.sal.api.component.ComponentLocator;
 import com.atlassian.seraph.auth.AuthenticatorException;
 import com.atlassian.seraph.auth.LoginReason;
 import java.security.Principal;
-import java.sql.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -62,15 +56,10 @@ public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator 
             }
             LoginReason.OK.stampRequestResponse(request, response);
             return existingUser;
-        } else {
-            try {
-                // The user wasn't found in confluence but is authenticated with cas.
-                // Maybe the user was created after the last directory synchronization.
-                synchronizeUsers();
-            } catch (OperationFailedException | DirectoryNotFoundException e) {
-                e.printStackTrace();
-            }
         }
+
+        // Do not synchronize directory if the user is nil because this could lead to heavy load and application freeze
+        // where confluence contains many plugins (including linchpin) and runs in anonymous mode.
 
         final HttpSession session = request.getSession();
         final Assertion assertion = (Assertion) session.getAttribute(AbstractCasFilter.CONST_CAS_ASSERTION);
@@ -121,21 +110,5 @@ public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator 
         removePrincipalFromSessionContext(request);
         session.setAttribute(AbstractCasFilter.CONST_CAS_ASSERTION, null);
         return true;
-    }
-
-    static synchronized void synchronizeUsers() throws OperationFailedException, DirectoryNotFoundException {
-        DirectoryManager directoryManager = ComponentLocator.getComponent(DirectoryManager.class);
-        for (Directory directory : directoryManager.findAllDirectories()) {
-            if (directoryManager.isSynchronisable(directory.getId())
-                    && !directoryManager.isSynchronising(directory.getId())) {
-                Date threshold = new Date(System.currentTimeMillis() - 30 * 1000);
-                if (directory.getUpdatedDate().before(threshold)) {
-                    LOGGER.debug("Synchronizing directory {}", directory.getName());
-                    directoryManager.synchroniseCache(directory.getId(), directoryManager.getSynchronisationMode(directory.getId()), false);
-                } else {
-                    LOGGER.debug("Directory {} was synchronized in the last 30 seconds", directory.getName());
-                }
-            }
-        }
     }
 }
