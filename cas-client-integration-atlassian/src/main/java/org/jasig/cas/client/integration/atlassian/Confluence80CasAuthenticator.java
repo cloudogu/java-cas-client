@@ -68,7 +68,7 @@ public final class Confluence80CasAuthenticator extends ConfluenceAuthenticator 
                 // The user wasn't found in confluence but is authenticated with cas.
                 // Maybe the user was created after the last directory synchronization.
                 //
-                // Installed plugins e.g. linchpin with anonymous mode enabled causes many request.
+                // Installed plugins e.g. linchpin with anonymous mode enabled causes many requests.
                 // Do not synchronize in this case because this results in an application freeze.
                 if (assertion != null && assertion.isValid()) {
                     if (LOGGER.isDebugEnabled()) {
