@@ -43,6 +43,7 @@ public class Confluence80CasWebApplicationInitializer implements WebApplicationI
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         logger.info("Initializing CAS SSO filters");
+        // apply the encoding filter first to avoid it not being applied at all due to caching. See {@link Confluence80EncodingFilter}
         initEncodingFilter(servletContext);
         initSingleSignOutFilter(servletContext);
         initAuthenticationFilter(servletContext);
