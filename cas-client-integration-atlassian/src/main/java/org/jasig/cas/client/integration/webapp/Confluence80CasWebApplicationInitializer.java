@@ -10,6 +10,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 
 import org.jasig.cas.client.authentication.AuthenticationFilter;
+import org.jasig.cas.client.integration.atlassian.Confluence80EncodingFilter;
 import org.jasig.cas.client.session.SingleSignOutFilter;
 import org.jasig.cas.client.validation.Cas20ProxyReceivingTicketValidationFilter;
 import org.springframework.core.Ordered;
@@ -42,10 +43,26 @@ public class Confluence80CasWebApplicationInitializer implements WebApplicationI
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         logger.info("Initializing CAS SSO filters");
+        // apply the encoding filter first to avoid it not being applied at all due to caching. See {@link Confluence80EncodingFilter}
+        initEncodingFilter(servletContext);
         initSingleSignOutFilter(servletContext);
         initAuthenticationFilter(servletContext);
         initValidationFilter(servletContext);
         logger.info("End of initializing CAS SSO filters");
+    }
+
+    private void initEncodingFilter(ServletContext servletContext) {
+        FilterRegistration casEncodingFilterRegistration = servletContext.getFilterRegistration("CasEncodingFilter");
+        if (casEncodingFilterRegistration == null) {
+            casEncodingFilterRegistration = servletContext.addFilter("CasEncodingFilter", Confluence80EncodingFilter.class);
+        }
+        logger.info("Registering CAS encoding filter");
+
+        casEncodingFilterRegistration.addMappingForUrlPatterns(
+                EnumSet.allOf(DispatcherType.class),
+                false,
+                "/*");
+        logInitParams(casEncodingFilterRegistration);
     }
 
     private void initSingleSignOutFilter(ServletContext servletContext) {
